@@ -1,115 +1,256 @@
-// damped_verlet.cpp
-// Damped Harmonic Oscillator using position-Verlet with velocity-estimate for damping
-// Produces CSV file with columns: t, x, v, energy
-//
-// Compile:
-//    g++ -O2 -std=c++17 -o damped_verlet damped_verlet.cpp
-//
-// Run (examples):
-//    ./damped_verlet            # runs default parameters and writes CSV
-//    ./damped_verlet 1.0 1.0 0.2 0.01 50.0 1.0 0.0
-//
-// Arguments (optional):
-//    m k b dt tmax x0 v0
-// Defaults: m=1.0 k=1.0 b=0.2 dt=0.01 tmax=50 x0=1.0 v0=0.0
-
 #include <iostream>
 #include <fstream>
-#include <cmath>
-#include <iomanip>
+#include <vector>
 #include <string>
-#include <sstream>
 
-int main(int argc, char** argv) {
-    // --- default parameters ---
-    double m = 1.0;
-    double k = 1.0;
-    double b = 0.2;
-    double dt = 0.01;
-    double tmax = 50.0;
-    double x0 = 1.0;
-    double v0 = 0.0;
+using namespace std;
 
-    if (argc >= 2) m = std::stod(argv[1]);
-    if (argc >= 3) k = std::stod(argv[2]);
-    if (argc >= 4) b = std::stod(argv[3]);
-    if (argc >= 5) dt = std::stod(argv[4]);
-    if (argc >= 6) tmax = std::stod(argv[5]);
-    if (argc >= 7) x0 = std::stod(argv[6]);
-    if (argc >= 8) v0 = std::stod(argv[7]);
+class Book {
+public:
+    int id;
+    string title;
+    string author;
+    int availableCopies;
+    int totalCopies;
 
-    // Determine regime
-    double discr = b*b - 4.0*m*k;
-    std::string regime;
-    if (discr < 0) regime = "underdamped";
-    else if (std::abs(discr) < 1e-12) regime = "critically damped";
-    else regime = "overdamped";
+    Book(int _id, string _title, string _author, int _availableCopies, int _totalCopies) {
+        id = _id;
+        title = _title;
+        author = _author;
+        availableCopies = _availableCopies;
+        totalCopies = _totalCopies;
+    }
+};
 
-    // Output file name:
-    std::ostringstream fname;
-    fname << "damped_b" << std::fixed << std::setprecision(2) << b
-          << "_dt" << dt << ".csv";
-    std::string filename = fname.str();
+class Member {
+public:
+    int id;
+    string name;
+    string email;
 
-    std::ofstream out(filename);
-    if (!out.is_open()) {
-        std::cerr << "Error opening output file: " << filename << "\n";
-        return 1;
+    Member(int _id, string _name, string _email) {
+        id = _id;
+        name = _name;
+        email = _email;
+    }
+};
+
+vector<Book> books;
+vector<Member> members;
+
+
+void loadBooks() {
+    ifstream file("books.txt");
+    if (!file.is_open()) return;
+
+    int id, avail, total;
+    string title, author;
+
+    while (file >> id) {
+        file.ignore();
+        getline(file, title);
+        getline(file, author);
+        file >> avail >> total;
+        file.ignore();
+
+        books.push_back(Book(id, title, author, avail, total));
+    }
+    file.close();
+}
+
+void saveBooks() {
+    ofstream file("books.txt", ios::out);
+    for (auto &b : books) {
+        file << b.id << "*"
+             << b.title << "*"
+             << b.author << "*"
+             << b.availableCopies << "*"
+             << b.totalCopies << "\n";
+    }
+    file.close();
+}
+
+void loadMembers() {
+    ifstream file("members.txt");
+    if (!file.is_open()) return;
+
+    int id;
+    string name, email;
+
+    while (file >> id) {
+        file.ignore();
+        getline(file, name);
+        getline(file, email);
+
+        members.push_back(Member(id, name, email));
+    }
+    file.close();
+}
+
+void saveMembers() {
+    ofstream file("members.txt", ios::out);
+
+    for (auto &m : members) {
+        file << m.id << "*"
+             << m.name << "*"
+             << m.email << "\n";
+    }
+    file.close();
+}
+
+void addBook() {
+    int id, copies;
+    string title, author;
+
+    cout << "Enter Book ID: ";
+    cin >> id;
+    cin.ignore();
+
+    cout << "Enter Book Title: ";
+    getline(cin, title);
+
+    cout << "Enter Book Author: ";
+    getline(cin, author);
+
+    cout << "Enter Available Copies: ";
+    cin >> copies;
+
+    books.push_back(Book(id, title, author, copies, copies));
+    saveBooks();
+
+    cout << "Book added and saved successfully!\n";
+}
+
+void displayBooks() {
+    cout << "\n--- List of Books ---\n";
+
+    if (books.empty()) {
+        cout << "No books available.\n";
+        return;
     }
 
-    // Header
-    out << "# Damped harmonic oscillator (m=" << m << ", k=" << k << ", b=" << b
-        << ", dt=" << dt << ", x0=" << x0 << ", v0=" << v0 << ", regime=" << regime << ")\n";
-    out << "t,x,v,energy\n";
+    for (auto &b : books) {
+        cout << "ID: " << b.id
+             << ", Title: " << b.title
+             << ", Author: " << b.author
+             << ", Available: " << b.availableCopies
+             << ", Total: " << b.totalCopies << "\n";
+    }
+}
 
-    // Initial acceleration at t=0: a0 = (-k*x0 - b*v0)/m
-    double a0 = (-k * x0 - b * v0) / m;
+void issueBook() {
+    int bookId, memberId;
+    cout << "Enter Book ID to issue: ";
+    cin >> bookId;
+    cout << "Enter Member ID: ";
+    cin >> memberId;
 
-    // Compute "previous" position x_-1 using backward Taylor:
-    // x_{-1} = x0 - v0*dt + 0.5*a0*dt^2
-    double x_prev = x0 - v0*dt + 0.5 * a0 * dt * dt;
-    double x = x0;
-    double v = v0;
+    for (auto &b : books) {
+        if (b.id == bookId) {
+            if (b.availableCopies > 0) {
+                b.availableCopies--;
+                saveBooks();
+                cout << "Book issued successfully!\n";
+                return;
+            } else {
+                cout << "No copies available!\n";
+                return;
+            }
+        }
+    }
+    cout << "Book not found!\n";
+}
 
-    // initial energy
-    auto energy = [&](double x_, double v_){
-        return 0.5 * m * v_ * v_ + 0.5 * k * x_ * x_;
-    };
+void returnBook() {
+    int bookId;
+    cout << "Enter Book ID to return: ";
+    cin >> bookId;
 
-    double t = 0.0;
-    out << std::fixed << std::setprecision(8);
-    out << t << "," << x << "," << v << "," << energy(x,v) << "\n";
+    for (auto &b : books) {
+        if (b.id == bookId) {
 
-    // Time-stepping loop
-    int nsteps = static_cast<int>(std::ceil(tmax / dt));
-    for (int n = 0; n < nsteps; ++n) {
-        // estimate velocity at time n:
-        double v_est = (x - x_prev) / dt;
+            if (b.availableCopies == b.totalCopies) {
+                cout << "All copies already in library! Cannot return.\n";
+                return;
+            }
 
-        // acceleration a_n
-        double a = (-k * x - b * v_est) / m;
-
-        // Verlet update for next position
-        double x_next = 2.0 * x - x_prev + a * dt * dt;
-
-        // estimate velocity at next time using central difference (optional)
-        double v_next = (x_next - x) / dt;
-
-        t += dt;
-        // write step n+1 (t)
-        out << t << "," << x_next << "," << v_next << "," << energy(x_next, v_next) << "\n";
-
-        // shift variables for next iteration
-        x_prev = x;
-        x = x_next;
-        v = v_next;
+            b.availableCopies++;
+            saveBooks();
+            cout << "Book returned successfully!\n";
+            return;
+        }
     }
 
-    out.close();
-    std::cout << "Simulation finished. Output written to: " << filename << "\n";
-    std::cout << "Regime detected: " << regime << " (b^2 - 4*m*k = " << discr << ")\n";
-    std::cout << "Suggested plotting: x(t), phase space (x vs v), energy(t).\n";
-    std::cout << "For different regimes try b = 0.2 (underdamped), 2.0 (critical/over depending on m,k), 5.0 (overdamped).\n";
-    std::cout << "If you want a smaller dt, re-run with dt as the 4th command-line argument.\n";
+    cout << "Book not found!\n";
+}
+
+void addMember() {
+    int id;
+    string name, email;
+
+    cout << "Enter Member ID: ";
+    cin >> id;
+    cin.ignore();
+
+    cout << "Enter Member Name: ";
+    getline(cin, name);
+
+    cout << "Enter Member Email: ";
+    getline(cin, email);
+
+    members.push_back(Member(id, name, email));
+    saveMembers();
+
+    cout << "Member added successfully!\n";
+}
+
+void displayMembers() {
+    cout << "\n--- List of Members ---\n";
+
+    if (members.empty()) {
+        cout << "No members available.\n";
+        return;
+    }
+
+    for (auto &m : members) {
+        cout << "ID: " << m.id
+             << ", Name: " << m.name
+             << ", Email: " << m.email << "\n";
+    }
+}
+
+void menu() {
+    int choice;
+
+    do {
+        cout << "\n      LIBRARY MANAGEMENT SYSTEM      \n";
+        cout << "1. Add Book\n";
+        cout << "2. View Books\n";
+        cout << "3. Add Member\n";
+        cout << "4. View Members\n";
+        cout << "5. Issue Book\n";
+        cout << "6. Return Book\n";
+        cout << "7. Exit\n";
+        cout << "Enter choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: addBook(); break;
+            case 2: displayBooks(); break;
+            case 3: addMember(); break;
+            case 4: displayMembers(); break;
+            case 5: issueBook(); break;
+            case 6: returnBook(); break;
+            case 7: cout << "Exiting...\n"; break;
+            default: cout << "Invalid choice!\n"; break;
+        }
+    } while (choice != 7);
+}
+
+int main() {
+    loadBooks();
+    loadMembers();
+
+    menu();
     return 0;
 }

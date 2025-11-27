@@ -1,2 +1,16 @@
-101*sjsj sjsj*shshsh@gmail.com*12022*1w w2*wjwjej@gmail.com
-9090*shsh shhse*shshehe@gmail.com
+ID: 101
+Name: 9090*shsh shhse*shshehe@gmail.com
+Email: 
+------------------------------
+ID: 100001
+Name: hukurullo Abdusattorov
+Email: shukurullo181818@gmail.com
+------------------------------
+ID: 100002
+Name: en
+Email: menmenmen@gmail.com
+------------------------------
+ID: 100003
+Name: Prof.Adnan Manzoor
+Email: i_dunno_his_email@gmail.com
+------------------------------

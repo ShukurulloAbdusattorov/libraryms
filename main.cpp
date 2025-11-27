@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <limits>
 
 using namespace std;
 
@@ -38,6 +39,24 @@ public:
 vector<Book> books;
 vector<Member> members;
 
+int lastBookID = 100000;
+int lastMemberID = 100000;
+
+int getValidInt(const string &prompt) {
+    int value;
+    while (true) {
+        cout << prompt;
+        if (cin >> value) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return value;
+        } else {
+            cout << "Invalid input! Please enter a number." << "\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
 void loadBooks() {
     ifstream file("books.txt");
     if (!file.is_open()) return;
@@ -47,43 +66,46 @@ void loadBooks() {
     string title, author;
 
     while (getline(file, line)) {
+        if (line.empty()) continue;
+        if (line.rfind("ID: ", 0) == 0) {
+            id = stoi(line.substr(4));
+            if (id > lastBookID) lastBookID = id;
 
-        if (line.rfind("Book ID:", 0) == 0) {
-            id = stoi(line.substr(9));
             getline(file, line);
-            title = line.substr(8);
-            getline(file, line);
-            author = line.substr(9);
-            getline(file, line);
-            avail = stoi(line.substr(18));
-            getline(file, line);
-            total = stoi(line.substr(15));
-            getline(file, line);
+            title = line.substr(7);
 
+            getline(file, line);
+            author = line.substr(8);
+
+            getline(file, line);
+            avail = stoi(line.substr(11));
+
+            getline(file, line);
+            total = stoi(line.substr(7));
+
+            getline(file, line);
             books.push_back(Book(id, title, author, avail, total));
         }
     }
     file.close();
 }
 
-void saveBooks(const vector<Book>& books) {
+void saveBooks() {
     ofstream file("books.txt", ios::out);
-
     if (!file.is_open()) {
-        cout << "Error: Unable to open file for saving.\n";
+        cout << "Error: Unable to open books.txt for saving." << "\n";
         return;
     }
 
     for (const auto &b : books) {
-        file << b.id << "\n"
-             << b.title << "\n"
-             << b.author << "\n"
-             << b.availableCopies << "\n"
-             << b.totalCopies << "\n"
-             << "------------------------------" << "\n";
+        file << "ID: " << b.id << "\n"
+             << "Title: " << b.title << "\n"
+             << "Author: " << b.author << "\n"
+             << "Available: " << b.availableCopies << "\n"
+             << "Total: " << b.totalCopies << "\n"
+             << "--------------------------------------------------" << "\n";
     }
     file.close();
-    cout << "Books saved successfully.\n";
 }
 
 void loadMembers() {
@@ -97,167 +119,162 @@ void loadMembers() {
     while (getline(file, line)) {
         if (line.empty()) continue;
 
-        id = stoi(line);
-        getline(file, name);
-        getline(file, email);
-        getline(file, line);
+        if (line.rfind("ID: ", 0) == 0) {
+            id = stoi(line.substr(4));
+            if (id > lastMemberID) lastMemberID = id;
 
-        members.push_back(Member(id, name, email));
+            getline(file, line);
+            name = line.substr(6);
+
+            getline(file, line);
+            email = line.substr(7);
+
+            getline(file, line);
+            members.push_back(Member(id, name, email));
+        }
     }
     file.close();
 }
 
 void saveMembers() {
     ofstream file("members.txt", ios::out);
-
     if (!file.is_open()) {
-        cout << "Error: I am unable to open file for saving.\n";
+        cout << "Error: Unable to open members.txt for saving." << "\n";
         return;
     }
+
     for (const auto &m : members) {
-        file << m.id << "\n"
-             << m.name << "\n"
-             << m.email << "\n"
+        file << "ID: " << m.id << "\n"
+             << "Name: " << m.name << "\n"
+             << "Email: " << m.email << "\n"
              << "------------------------------" << "\n";
     }
     file.close();
-    cout << "Members saved successfully.\n";
 }
 
 void addBook() {
-    int id, copies;
     string title, author;
-
-    cout << "Enter Book ID: ";
-    cin >> id;
-    cin.ignore();
-
     cout << "Enter Book Title: ";
     getline(cin, title);
 
     cout << "Enter Book Author: ";
     getline(cin, author);
 
-    cout << "Enter Available Copies: ";
-    cin >> copies;
+    int copies = getValidInt("Enter Available Copies: ");
 
-    books.push_back(Book(id, title, author, copies, copies));
+    int newID = lastBookID + 1;
+    lastBookID = newID;
+
+    books.push_back(Book(newID, title, author, copies, copies));
     saveBooks();
-
-    cout << "Book added and saved successfully!\n";
+    cout << "Book is added with ID " << newID << " successfully!" << "\n";
 }
 
 void displayBooks() {
-    cout << "\n------- List of Books -------\n";
-
+    cout << "\n" << "-------- List of Books --------" << "\n";
     if (books.empty()) {
-        cout << "No books available.\n";
+        cout << "No books available." << "\n";
         return;
     }
 
     for (auto &b : books) {
         cout << "ID: " << b.id
-             << "Title: " << b.title
-             << "Author: " << b.author
-             << "Available: " << b.availableCopies
-             << "Total: " << b.totalCopies << "\n";
+             << ", Title: " << b.title
+             << ", Author: " << b.author
+             << ", Available: " << b.availableCopies
+             << ", Total: " << b.totalCopies << "\n";
     }
 }
 
 void issueBook() {
-    int bookId, memberId;
-    cout << "Enter Book ID to issue: ";
-    cin >> bookId;
-    cout << "Enter Member ID: ";
-    cin >> memberId;
+    int bookId = getValidInt("Enter Book ID to issue: ");
+    int memberId = getValidInt("Enter Member ID: ");
 
     for (auto &b : books) {
         if (b.id == bookId) {
             if (b.availableCopies > 0) {
                 b.availableCopies--;
                 saveBooks();
-                cout << "Book issued successfully!\n";
+                cout << "Book is issued successfully!" << "\n";
                 return;
             } else {
-                cout << "No copies available!\n";
+                cout << "No copies available!" << "\n";
                 return;
             }
         }
     }
-    cout << "Book is not found!\n";
+    cout << "Book is not found!" << "\n";
 }
 
 void returnBook() {
-    int bookId;
-    cout << "Enter Book ID to return: ";
-    cin >> bookId;
+    int bookId = getValidInt("Enter Book ID to return: ");
 
     for (auto &b : books) {
         if (b.id == bookId) {
-
             if (b.availableCopies == b.totalCopies) {
-                cout << "All copies are already in library! You cannot return.\n";
+                cout << "All copies are already in library! You cannot return." << "\n";
                 return;
             }
-
             b.availableCopies++;
             saveBooks();
-            cout << "Book is returned successfully!\n";
+            cout << "Book is returned successfully!" << "\n";
             return;
         }
     }
-    cout << "Book is not found!\n";
+    cout << "Book is not found!" << "\n";
 }
 
 void addMember() {
-    int id;
     string name, email;
-
-    cout << "Enter Member ID: ";
-    cin >> id;
-    cin.ignore();
-
     cout << "Enter Member Name: ";
     getline(cin, name);
 
     cout << "Enter Member Email: ";
     getline(cin, email);
 
-    members.push_back(Member(id, name, email));
-    saveMembers();
+    int newID = lastMemberID + 1;
+    lastMemberID = newID;
 
-    cout << "Member added successfully!\n";
+    members.push_back(Member(newID, name, email));
+    saveMembers();
+    cout << "Member added with ID " << newID << " successfully!" << "\n";
 }
 
 void displayMembers() {
-    cout << "\n------- List of Members -------\n";
-
+    cout << "\n" << "------- List of Members -------" << "\n";
     if (members.empty()) {
-        cout << "No members available.\n";
+        cout << "No members available." << "\n";
         return;
     }
 
     for (auto &m : members) {
         cout << "ID: " << m.id
-             << "Name: " << m.name
-             << "Email: " << m.email << "\n";
+             << ", Name: " << m.name
+             << ", Email: " << m.email << "\n";
     }
 }
 
 void menu() {
-    char choice;
+    string input;
 
     do {
         cout << "\n      LIBRARY MANAGEMENT SYSTEM      \n";
-        cout << "1. Add Book\n";
-        cout << "2. View Books\n";
-        cout << "3. Add Member\n";
-        cout << "4. View Members\n";
-        cout << "5. Issue Book\n";
-        cout << "6. Return Book\n";
-        cout << "7. Exit\n";
+        cout << "1. Add Book" << "\n";
+        cout << "2. View Books" << "\n";
+        cout << "3. Add Member" << "\n";
+        cout << "4. View Members" << "\n";
+        cout << "5. Issue Book" << "\n";
+        cout << "6. Return Book" << "\n";
+        cout << "7. Exit" << "\n";
         cout << "Enter choice: ";
-        cin >> choice;
+        getline(cin, input);
+
+        if (input.length() != 1 || input[0] < '1' || input[0] > '7') {
+            cout << "Invalid choice!" << "\n";
+            continue;
+        }
+
+        char choice = input[0];
 
         switch (choice) {
             case '1': addBook(); break;
@@ -269,14 +286,12 @@ void menu() {
             case '7': cout << "Exiting...\n"; break;
             default: cout << "Invalid choice!\n"; break;
         }
-    } while (choice != '7');
+    } while (input[0] != '7');
 }
 
 int main() {
     loadBooks();
     loadMembers();
-
     menu();
     return 0;
 }
-

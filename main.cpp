@@ -61,11 +61,7 @@ void loadBooks() {
 void saveBooks() {
     ofstream file("books.txt", ios::out);
     for (auto &b : books) {
-        file << b.id << "*"
-             << b.title << "*"
-             << b.author << "*"
-             << b.availableCopies << "*"
-             << b.totalCopies << "\n";
+        file << b.id << "*" << b.title << "*" << b.author << "*" << b.availableCopies << "*" << b.totalCopies << "\n";
     }
     file.close();
 }
@@ -91,9 +87,7 @@ void saveMembers() {
     ofstream file("members.txt", ios::out);
 
     for (auto &m : members) {
-        file << m.id << "*"
-             << m.name << "*"
-             << m.email << "\n";
+        file << m.id << "*" << m.name << "*" << m.email << "\n";
     }
     file.close();
 }
@@ -122,7 +116,7 @@ void addBook() {
 }
 
 void displayBooks() {
-    cout << "\n--- List of Books ---\n";
+    cout << "\n   --- List of Books ---   \n";
 
     if (books.empty()) {
         cout << "No books available.\n";
@@ -130,11 +124,7 @@ void displayBooks() {
     }
 
     for (auto &b : books) {
-        cout << "ID: " << b.id
-             << ", Title: " << b.title
-             << ", Author: " << b.author
-             << ", Available: " << b.availableCopies
-             << ", Total: " << b.totalCopies << "\n";
+        cout << "ID: " << b.id << ", Title: " << b.title << ", Author: " << b.author << ", Available: " << b.availableCopies << ", Total: " << b.totalCopies << "\n";
     }
 }
 
@@ -213,9 +203,7 @@ void displayMembers() {
     }
 
     for (auto &m : members) {
-        cout << "ID: " << m.id
-             << ", Name: " << m.name
-             << ", Email: " << m.email << "\n";
+        cout << "ID: " << m.id << ", Name: " << m.name << ", Email: " << m.email << "\n";
     }
 }
 
@@ -223,7 +211,7 @@ void menu() {
     int choice;
 
     do {
-        cout << "\n      LIBRARY MANAGEMENT SYSTEM      \n";
+        cout << "\n     --- LIBRARY MANAGEMENT SYSTEM ---     \n";
         cout << "1. Add Book\n";
         cout << "2. View Books\n";
         cout << "3. Add Member\n";

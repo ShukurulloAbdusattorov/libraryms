@@ -48,7 +48,11 @@ int getValidInt(const string &prompt) {
         cout << prompt;
         if (cin >> value) {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            return value;
+            if (value > 0) {
+                return value;
+            } else {
+                cout << "Number must be greater than 0!" << "\n";
+            }
         } else {
             cout << "Invalid input! Please enter a number." << "\n";
             cin.clear();
@@ -98,12 +102,7 @@ void saveBooks() {
     }
 
     for (const auto &b : books) {
-        file << "ID: " << b.id << "\n"
-             << "Title: " << b.title << "\n"
-             << "Author: " << b.author << "\n"
-             << "Available: " << b.availableCopies << "\n"
-             << "Total: " << b.totalCopies << "\n"
-             << "--------------------------------------------------" << "\n";
+        file << "ID: " << b.id << "\n" << "Title: " << b.title << "\n" << "Author: " << b.author << "\n" << "Available: " << b.availableCopies << "\n" << "Total: " << b.totalCopies << "\n" << "--------------------------------------------------\n";
     }
     file.close();
 }
@@ -144,10 +143,7 @@ void saveMembers() {
     }
 
     for (const auto &m : members) {
-        file << "ID: " << m.id << "\n"
-             << "Name: " << m.name << "\n"
-             << "Email: " << m.email << "\n"
-             << "------------------------------" << "\n";
+        file << "ID: " << m.id << "\n" << "Name: " << m.name << "\n" << "Email: " << m.email << "\n" << "------------------------------\n";
     }
     file.close();
 }
@@ -178,11 +174,7 @@ void displayBooks() {
     }
 
     for (auto &b : books) {
-        cout << "ID: " << b.id
-             << ", Title: " << b.title
-             << ", Author: " << b.author
-             << ", Available: " << b.availableCopies
-             << ", Total: " << b.totalCopies << "\n";
+        cout << "ID: " << b.id << ", Title: " << b.title << ", Author: " << b.author << ", Available: " << b.availableCopies << ", Total: " << b.totalCopies << "\n";
     }
 }
 
@@ -229,8 +221,20 @@ void addMember() {
     cout << "Enter Member Name: ";
     getline(cin, name);
 
-    cout << "Enter Member Email: ";
-    getline(cin, email);
+    while (true) {
+        cout << "Enter Member Email: ";
+        getline(cin, email);
+
+        size_t atPos = email.find('@');
+        size_t lastAtPos = email.rfind('@');
+        size_t dotPos = email.rfind(".com");
+
+        if (atPos != string::npos && atPos == lastAtPos && dotPos != string::npos && atPos < dotPos && dotPos == email.length() - 4) {
+            break;
+            } else {
+                cout << "Invalid email! Must be in the format something@domain.com\n";
+            }
+    }
 
     int newID = lastMemberID + 1;
     lastMemberID = newID;
@@ -248,9 +252,7 @@ void displayMembers() {
     }
 
     for (auto &m : members) {
-        cout << "ID: " << m.id
-             << ", Name: " << m.name
-             << ", Email: " << m.email << "\n";
+        cout << "ID: " << m.id << ", Name: " << m.name << ", Email: " << m.email << "\n";
     }
 }
 

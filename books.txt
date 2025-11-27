@@ -22,3 +22,33 @@ Author: Meee
 Available: 2712
 Total: 2712
 --------------------------------------------------
+ID: 100005
+Title: Please, Give me 20/20!
+Author: Meeeeeeee
+Available: 20
+Total: 20
+--------------------------------------------------
+ID: 100006
+Title: PLEASEEEEEE
+Author: MEEEEEE and My Bro
+Available: -1
+Total: -1
+--------------------------------------------------
+ID: 100007
+Title: PLEEEEAASSSEEE
+Author: YOU KNOW)
+Available: 3
+Total: 3
+--------------------------------------------------
+ID: 100008
+Title: My endless Tortures
+Author: CS
+Available: 1
+Total: 1
+--------------------------------------------------
+ID: 100009
+Title: End of the torture
+Author: Me
+Available: 1
+Total: 1
+--------------------------------------------------
